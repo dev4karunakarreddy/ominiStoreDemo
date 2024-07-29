@@ -5,12 +5,9 @@ import com.Demo.dto.OmniCarSystemAccess.RetailerDashBoardOneVoiceDTO;
 import com.Demo.dto.OmniCarSystemAccess.TrafficReportOminiStoreDTO;
 import com.Demo.dto.OmniCarSystemAccess.WorkPlaceSesimiDTO;
 import com.Demo.dto.RetailerAddressDTO;
-
 import com.Demo.repository.EmployeeDataRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.interactive.form.PDAcroForm;
-import org.apache.pdfbox.pdmodel.interactive.form.PDCheckBox;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -27,38 +24,25 @@ public class PdfService {
     @Autowired
     private EmployeeDataRepository employeeDataRepository;
 
-    //Method to extract the data from the file
     public void extractAndSaveData(MultipartFile file) throws IOException {
-
         PDDocument document = PDDocument.load(file.getInputStream());
         PDFTextStripper pdfStripper = new PDFTextStripper();
         String text = pdfStripper.getText(document);
         document.close();
-
         EmployeeDataDTO employeeDataDTO = createEmployeeData(text);
-
-        PDAcroForm acroForm = document.getDocumentCatalog().getAcroForm();
-        log.info("acroForm==>{}",acroForm);
-        if (acroForm != null) {
-
-            for (String fieldName : acroForm.getFields().stream().map(field -> field.getFullyQualifiedName()).toArray(String[]::new)) {
-                if (acroForm.getField(fieldName) instanceof PDCheckBox) {
-                    PDCheckBox checkBox = (PDCheckBox) acroForm.getField(fieldName);
-                    setCheckboxValue(fieldName, "Yes".equals(checkBox.getValue()));
-                }
-            }
-        }
-//        employeeDataRepository.save(employeeData);
+        log.info("Employee Data: {}", employeeDataDTO);
+        log.info("CHecked",setCheckboxValue(text));
+//        employeeDataRepository.save(employeeDataDTO);
     }
 
     private EmployeeDataDTO createEmployeeData(String text) {
         EmployeeDataDTO employeeDataDTO = new EmployeeDataDTO();
         RetailerAddressDTO retailerAddressDTO = new RetailerAddressDTO();
 
-        String firstNamePattern = "First Name\\s+(\\w+)";
-        String lastNamePattern = "Last Name\\s+(\\w+)";
-        String mobilePattern = "Mobile\\s+(\\d+)";
-        String titlePattern = "Title\\s+([\\w\\s]+)"; // Capture words with spaces
+        String firstNamePattern = "First Name\\s+(.*)";
+        String lastNamePattern = "Last Name\\s+(.*)";
+        String mobilePattern = "Mobile\\s+(.*)";
+        String titlePattern = "Title\\s+(.*)";
         String emailPattern = "Email Address\\s+(\\w+@\\w+\\.\\w+)";
         String managerEmailPattern = "Manager's Email\\s+(\\w+@\\w+\\.\\w+)";
         String cdsidPattern = "CDSID\\s+([\\w-]+)";
@@ -174,59 +158,96 @@ public class PdfService {
         }
 
         employeeDataDTO.setRetailerAddressDTO(retailerAddressDTO);
-        log.info("Employee Data: {}", employeeDataDTO);
         return employeeDataDTO;
     }
-    private static void setCheckboxValue(String fieldName, boolean value) {
 
+    private static Object setCheckboxValue(String text) {
         AvanserOmniRewardsProgramsDTO rewardsProgramsDTO = new AvanserOmniRewardsProgramsDTO();
         RetailerDashBoardOneVoiceDTO dashBoardOneVoiceDTO = new RetailerDashBoardOneVoiceDTO();
         TrafficReportOminiStoreDTO reportOminiStoreDTO = new TrafficReportOminiStoreDTO();
         WorkPlaceSesimiDTO workPlaceSesimiDTO = new WorkPlaceSesimiDTO();
+        String vf17Pattern = "(checked)\\s+VF1\\s+(.*)";
+        String e2ePattern = "(checked)\\s+E2E\\s+(.*)";
+        String webPromotionsPattern = "(Checked)\\s+Web Promotions\\s+(.*)";
+        String mmlPattern = "(checked)\\s+MML\\s+(.*)";
+        String ddpPattern = "(checked)\\s+DDP\\s+(.*)";
+        String vidatiePattern = "(checked)\\s+VIDA/TIE\\s+(.*)";
+        String cdsidPattern = "(checked)\\s+CDSID\\s+(.*)";
+        String omniVisionPattern = "(checked)\\s+Omni Vision\\s+(.*)";
+        String salesCloudPattern = "(checked)\\s+Sales Cloud\\s+(.*)";
+        String contentStorePattern = "(checked)\\s+Content Store\\s+(.*)";
+        String qw90Pattern = "(checked)\\s+QW90\\s+(.*)";
+        String vistaAccessPattern = "(checked)\\s+VISTA Access\\s+(.*)";
 
-        switch (fieldName) {
-            case "E2E":
-                rewardsProgramsDTO.setE2e(value);
-                break;
-            case "VF17":
-                rewardsProgramsDTO.setVf17(value);
-                break;
-            case "Web Promotions":
-                rewardsProgramsDTO.setWebPromotions(value);
-                break;
-            case "MML":
-                dashBoardOneVoiceDTO.setMml(value);
-                break;
-            case "DDP":
-                dashBoardOneVoiceDTO.setDdp(value);
-                break;
-            case "VIDA/TIE":
-                dashBoardOneVoiceDTO.setVida_tie(value);
-                break;
-            case "CDSID":
-                reportOminiStoreDTO.setCdsid(value);
-                break;
-            case "Omni Vision":
-                reportOminiStoreDTO.setOminiVision(value);
-                break;
-            case "Sales Cloud":
-                reportOminiStoreDTO.setSalesCloud(value);
-                break;
-            case "Content Store":
-                workPlaceSesimiDTO.setContentStore(value);
-                break;
-            case "QW90":
-                workPlaceSesimiDTO.setQw90(value);
-                break;
-            case "VISTA Access":
-                workPlaceSesimiDTO.setVistaAccess(value);
-                break;
+        String[] lines = text.split("\n");
+        for (String line : lines) {
+            Matcher matcher;
+
+            matcher = Pattern.compile(vf17Pattern).matcher(line);
+            if (matcher.find()) {
+                rewardsProgramsDTO.setVf17("checked".equals(matcher.group(1)));
+            }
+
+            matcher = Pattern.compile(e2ePattern).matcher(line);
+            if (matcher.find()) {
+                rewardsProgramsDTO.setE2e("checked".equals(matcher.group(1)));
+            }
+
+            matcher = Pattern.compile(webPromotionsPattern).matcher(line);
+            if (matcher.find()) {
+                rewardsProgramsDTO.setWebPromotions("checked".equals(matcher.group(1)));
+            }
+
+            matcher = Pattern.compile(mmlPattern).matcher(line);
+            if (matcher.find()) {
+                dashBoardOneVoiceDTO.setMml("checked".equals(matcher.group(1)));
+            }
+
+            matcher = Pattern.compile(ddpPattern).matcher(line);
+            if (matcher.find()) {
+                dashBoardOneVoiceDTO.setDdp("checked".equals(matcher.group(1)));
+            }
+
+            matcher = Pattern.compile(vidatiePattern).matcher(line);
+            if (matcher.find()) {
+                dashBoardOneVoiceDTO.setVida_tie("checked".equals(matcher.group(1)));
+            }
+
+            matcher = Pattern.compile(cdsidPattern).matcher(line);
+            if (matcher.find()) {
+                reportOminiStoreDTO.setCdsid("checked".equals(matcher.group(1)));
+            }
+
+            matcher = Pattern.compile(omniVisionPattern).matcher(line);
+            if (matcher.find()) {
+                reportOminiStoreDTO.setOminiVision("checked".equals(matcher.group(1)));
+            }
+
+            matcher = Pattern.compile(salesCloudPattern).matcher(line);
+            if (matcher.find()) {
+                reportOminiStoreDTO.setSalesCloud("checked".equals(matcher.group(1)));
+            }
+
+            matcher = Pattern.compile(contentStorePattern).matcher(line);
+            if (matcher.find()) {
+                workPlaceSesimiDTO.setContentStore("checked".equals(matcher.group(1)));
+            }
+
+            matcher = Pattern.compile(qw90Pattern).matcher(line);
+            if (matcher.find()) {
+                workPlaceSesimiDTO.setQw90("checked".equals(matcher.group(1)));
+            }
+
+            matcher = Pattern.compile(vistaAccessPattern).matcher(line);
+            if (matcher.find()) {
+                workPlaceSesimiDTO.setVistaAccess("checked".equals(matcher.group(1)));
+            }
         }
-        log.info("Reward programs:{}",rewardsProgramsDTO);
-        log.info("DashBoard One Voice:{}",dashBoardOneVoiceDTO);
-        log.info("Report Omini Store:{}",reportOminiStoreDTO);
-        log.info("WorkPlace Sesimi:{}",workPlaceSesimiDTO);
+
+        log.info("Reward programs:{}", rewardsProgramsDTO);
+        log.info("DashBoard One Voice:{}", dashBoardOneVoiceDTO);
+        log.info("Report Omini Store:{}", reportOminiStoreDTO);
+        log.info("WorkPlace Sesimi:{}", workPlaceSesimiDTO);
+        return null;
     }
-
 }
-

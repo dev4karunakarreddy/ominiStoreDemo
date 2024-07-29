@@ -1,5 +1,4 @@
 package com.Demo.entity;
-
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -22,6 +21,5 @@ public class EmployeeData {
     private RetailerAddress retailerAddress;
     private String startDate;
     private String finishDate;
-
 }
 

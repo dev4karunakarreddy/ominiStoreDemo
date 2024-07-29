@@ -1,5 +1,4 @@
 package com.Demo.dto;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,4 +20,5 @@ public class EmployeeDataDTO {
     private RetailerAddressDTO retailerAddressDTO;
     private String startDate;
     private String finishDate;
+
 }
